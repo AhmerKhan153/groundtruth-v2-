@@ -4,7 +4,6 @@ from ingestion.article_provider import ArticleProvider
 
 
 class ProviderRegistry:
-    """Registry of available article providers."""
 
     def __init__(self):
         self._providers: Dict[str, Type[ArticleProvider]] = {}

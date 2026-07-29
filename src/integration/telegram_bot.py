@@ -70,8 +70,12 @@ async def send_story_selection(stories: List[Dict]) -> None:
     )
 
 
-async def send_draft(draft_id: str, content: str) -> None:
-    """Send a generated draft with approve / reject / rewrite controls."""
+async def send_draft(draft_id: str, content: str, source_url: str = "") -> None:
+    """Send a generated draft with approve / reject / rewrite controls.
+
+    The source URL rides along with every draft so the claims in the post can be
+    checked against the article before approving it.
+    """
     keyboard = [
         [
             InlineKeyboardButton("✅ Approve", callback_data=f"approve:{draft_id}"),
@@ -79,6 +83,7 @@ async def send_draft(draft_id: str, content: str) -> None:
         ],
         [InlineKeyboardButton("✍️ Rewrite", callback_data=f"rewrite:{draft_id}")],
     ]
+    body = f"{content}\n\n— — —\n🔗 Source (verify before approving):\n{source_url}" if source_url else content
     await send_text_message(
-        content=content, reply_markup=InlineKeyboardMarkup(keyboard)
+        content=body, reply_markup=InlineKeyboardMarkup(keyboard)
     )

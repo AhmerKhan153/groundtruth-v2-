@@ -1,1 +1,1 @@
-"""Processing package for cleaner, extractor, and embeddings nodes."""
+"""Processing package for fetcher, cleaner, and embeddings nodes."""

@@ -14,5 +14,7 @@ class ArticleRepository:
         path = self.storage_dir / filename
         data: List[Dict] = list(articles)
         with path.open("w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
+            # default=str so Mongo types (ObjectId, datetime) on approved docs
+            # serialize cleanly instead of raising.
+            json.dump(data, f, indent=2, ensure_ascii=False, default=str)
         return path

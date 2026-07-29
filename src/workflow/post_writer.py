@@ -9,8 +9,17 @@ from src.llm import get_chat_model
 from src.config import POST_WRITING_PROMPT_TEMPLATE, REWRITE_PROMPT_SUFFIX
 
 
-def create_post(topic: str, is_rewrite: bool = False) -> str:
-    prompt = POST_WRITING_PROMPT_TEMPLATE.format(topic=topic)
+def create_post(title: str, brief: str, is_rewrite: bool = False) -> str:
+    """Write a post grounded in `brief`, the factual summary of the source article.
+
+    `brief` comes from the extraction stage (workflow/extraction), not straight
+    from the page. It is required: a post written from `title` alone is
+    fabrication, so callers must fail rather than pass an empty body.
+    """
+    if not brief:
+        raise ValueError("create_post needs a factual brief; a title alone invites invention")
+
+    prompt = POST_WRITING_PROMPT_TEMPLATE.format(title=title, content=brief)
     if is_rewrite:
         prompt += REWRITE_PROMPT_SUFFIX
 
