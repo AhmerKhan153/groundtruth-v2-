@@ -39,7 +39,7 @@ directly, so this is the single place to tune.
 
 | Env var | Value | What it does |
 |---|---|---|
-| `LLM_PROVIDER` | `ollama` | Picks the backend: `ollama` (local) or `claude` (Anthropic API, remote). |
+| `LLM_PROVIDER` | `ollama` | Picks the backend: `ollama` (local) or `openai` (a hosted, OpenAI-compatible endpoint). |
 | `OLLAMA_MODEL` | `gemma2:9b` | Which local model Ollama serves. |
 | `OLLAMA_NUM_CTX` | `4096` | **Context window** (max tokens the model keeps in view). Bigger = bigger KV cache = more VRAM. |
 | `OLLAMA_NUM_GPU` | `99` | **How many model layers to put on the GPU.** `99` = "all of them". Blank/`-1` = let Ollama decide (it under-fills). |
@@ -51,8 +51,9 @@ The plumbing:
 - `src/llm.py` — builds `ChatOllama(model=..., num_ctx=..., num_gpu=...)`; only
   passes `num_gpu` when it's set.
 
-To switch back to the cloud model (Claude), set `LLM_PROVIDER=claude` and put a key
-in `ANTHROPIC_API_KEY`. The Ollama knobs are then ignored.
+To switch back to a hosted model, set `LLM_PROVIDER=openai`, `LLM_MODEL` to that
+provider's model id, and put a key in `LLM_API_KEY` (plus `LLM_API_BASE` if it is
+not the SDK's default host). The Ollama knobs are then ignored.
 
 ---
 
@@ -105,7 +106,7 @@ This imports the project's own factory (`src/llm.py`), so it exercises the exact
 `num_ctx`/`num_gpu` the app will use — the fastest way to confirm a config change:
 
 ```bash
-cd /mnt/c/Users/ahmer/ai-writer
+cd /path/to/groundtruth          # the repo root
 PYTHONPATH=src python -c "
 from src.llm import get_chat_model
 m = get_chat_model()
@@ -159,7 +160,7 @@ ollama show gemma2:9b       # model details (params, context length, block_count
 
 Symptom: high RAM, low GPU utilization during writing.
 
-1. **Which LLM?** `LLM_PROVIDER=ollama`, `OLLAMA_MODEL=gemma2:9b` — local, not Claude.
+1. **Which LLM?** `LLM_PROVIDER=ollama`, `OLLAMA_MODEL=gemma2:9b` — local, not hosted.
 2. **`ollama ps` showed `47%/53% CPU/GPU`** — half the model was on the CPU (→ high
    RAM), so the GPU sat idle waiting on it (→ low GPU util).
 3. **Root causes:** (a) the RTX 3060 was driving the display (~1 GB VRAM gone), and

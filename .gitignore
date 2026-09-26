@@ -6,3 +6,7 @@ __pycache__/
 .pytest_cache/
 openclaw.txt
 .env
+
+# Generated workflow artifacts
+src/output/
+data/

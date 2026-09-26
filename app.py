@@ -1,4 +1,4 @@
-"""AI Writer entrypoint.
+"""Groundtruth entrypoint.
 
 Runs the Telegram bot plus two scheduled jobs:
 

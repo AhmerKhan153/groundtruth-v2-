@@ -6,15 +6,32 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # --- LLM selection ---------------------------------------------------------
-# LLM_PROVIDER: "claude" (Anthropic API, default) or "ollama" (local).
-# Switching is a single env var; get_chat_model() in src/llm.py reads these.
-LLM_PROVIDER = (os.getenv("LLM_PROVIDER") or "claude").lower()
-DEFAULT_LLM_MODEL = os.getenv("OLLAMA_MODEL") or "qwen3:4b"
-CLAUDE_MODEL = os.getenv("CLAUDE_MODEL") or "claude-opus-4-8"
-CLAUDE_MAX_TOKENS = int(os.getenv("CLAUDE_MAX_TOKENS") or "4096")
-# ChatAnthropic reads ANTHROPIC_API_KEY from the environment; surfaced here so a
-# missing key fails loudly at startup rather than on the first generation.
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+# The pipeline is provider-agnostic. src/llm.py is the ONLY module that builds a
+# chat model, and LLM_PROVIDER picks which adapter it uses:
+#
+#   ollama  -> a model running locally; no API key, no network (default)
+#   openai  -> any endpoint speaking the OpenAI chat protocol; set LLM_API_BASE to
+#              aim it at a self-hosted server (vLLM, llama.cpp, LM Studio) or a
+#              gateway, which is how you reach any other vendor without this
+#              codebase knowing their name
+#
+# Adding a backend is one builder in src/llm.py plus its SDK. No other module
+# changes, because nothing else instantiates a model.
+LLM_PROVIDER = (os.getenv("LLM_PROVIDER") or "ollama").lower()
+
+# Model id for the hosted providers. Deliberately WITHOUT a default: a baked-in
+# vendor model id is exactly what makes a codebase quietly provider-specific, and
+# a stale default surfaces as a confusing 404 on the first generation instead of a
+# clear configuration error. src/llm.py raises if this is missing.
+LLM_MODEL = os.getenv("LLM_MODEL")
+LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS") or "4096")
+# Leave LLM_API_KEY blank to let the provider SDK read its own conventional
+# environment variable instead.
+LLM_API_KEY = os.getenv("LLM_API_KEY")
+LLM_API_BASE = os.getenv("LLM_API_BASE")
+
+# Local model tag, used when LLM_PROVIDER=ollama.
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL") or "qwen3:4b"
 
 # --- Ollama GPU tuning (local inference only) ------------------------------
 # Ollama fills the GPU with as many model layers as fit, then spills the rest to
@@ -34,7 +51,7 @@ OLLAMA_NUM_GPU = int(_num_gpu) if _num_gpu not in (None, "") else None
 
 # --- Storage ---------------------------------------------------------------
 MONGODB_URI = os.getenv("MONGODB_URI") or "mongodb://localhost:27017/"
-MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME") or "KnowledgeExtractor"
+MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME") or "groundtruth"
 ARTICLES_COLLECTION = "articles"
 
 # Draft lifecycle statuses (Mongo `status` field is the source of truth).

@@ -4,7 +4,10 @@ pydantic
 pymongo
 python-dotenv
 langgraph
-langchain-ollama
-langchain-anthropic
+
+# LLM adapters. src/llm.py imports these lazily, so you only need the one your
+# LLM_PROVIDER actually selects -- drop the other for a leaner install.
+langchain-ollama      # LLM_PROVIDER=ollama  (local)
+langchain-openai      # LLM_PROVIDER=openai  (any OpenAI-compatible endpoint)
 python-telegram-bot
 apscheduler
