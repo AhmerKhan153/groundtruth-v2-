@@ -10,3 +10,6 @@ openclaw.txt
 # Generated workflow artifacts
 src/output/
 data/
+
+# Production deploy settings (deploy/deploy.sh)
+deploy/prod.env

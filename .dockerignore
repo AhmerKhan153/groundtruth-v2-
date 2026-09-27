@@ -1,0 +1,8 @@
+# Allow-list: only what the image needs. Keeps .env, .venv, tests and docs out.
+*
+!requirements.txt
+!main.py
+!groundtruth/
+!scripts/
+**/__pycache__
+**/*.py[cod]
