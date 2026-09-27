@@ -1,1 +1,0 @@
-"""Embeddings processing node."""

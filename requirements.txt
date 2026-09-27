@@ -1,13 +1,5 @@
-pytest
-requests
-pydantic
-pymongo
-python-dotenv
-langgraph
-
-# LLM adapters. src/llm.py imports these lazily, so you only need the one your
-# LLM_PROVIDER actually selects -- drop the other for a leaner install.
-langchain-ollama      # LLM_PROVIDER=ollama  (local)
-langchain-openai      # LLM_PROVIDER=openai  (any OpenAI-compatible endpoint)
-python-telegram-bot
-apscheduler
+# Runtime dependencies, pinned.
+openai==3.19.2          # DeepSeek through its OpenAI-compatible API
+pymongo==4.18.2
+requests==2.34.2
+python-dotenv==1.2.3

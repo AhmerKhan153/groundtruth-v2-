@@ -1,1 +1,0 @@
-"""Publishing workflow node."""

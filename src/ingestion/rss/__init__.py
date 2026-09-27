@@ -1,1 +1,0 @@
-"""RSS ingestion adapter package."""
