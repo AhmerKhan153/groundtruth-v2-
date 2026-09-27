@@ -41,6 +41,15 @@ LLM_EXTRA_BODY = json.loads(os.getenv("LLM_EXTRA_BODY") or "{}")
 MONGODB_URI = os.getenv("MONGODB_URI") or "mongodb://localhost:27017/"
 MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME") or "groundtruth"
 
-# --- Telegram (used from phase 3) -------------------------------------------
+# --- Telegram ---------------------------------------------------------------
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+# The only chat whose button taps are acted on.
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+# Telegram echoes this in X-Telegram-Bot-Api-Secret-Token on every webhook call
+# (set once with setWebhook), which is how /telegram knows the caller is Telegram.
+TELEGRAM_WEBHOOK_SECRET = os.getenv("TELEGRAM_WEBHOOK_SECRET")
+
+# --- Source job -------------------------------------------------------------
+# Cloud Scheduler sends this in X-Job-Secret. Unset = the endpoint refuses all calls.
+JOB_SECRET = os.getenv("JOB_SECRET")
+STORIES_PER_RUN = _int("STORIES_PER_RUN", 6)

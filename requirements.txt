@@ -1,4 +1,6 @@
 # Runtime dependencies, pinned.
+fastapi==0.141.1
+uvicorn==0.54.0
 openai==3.19.2          # DeepSeek through its OpenAI-compatible API
 pymongo==4.18.2
 requests==2.34.2

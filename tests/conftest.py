@@ -3,6 +3,11 @@ import os
 # Point the store at a throwaway database before groundtruth.config is imported.
 # load_dotenv never overrides variables that are already set.
 os.environ["MONGODB_DB_NAME"] = "groundtruth_test"
+# Fixed test identities, so tests never depend on (or touch) the real bot/secrets.
+os.environ["TELEGRAM_CHAT_ID"] = "1000"
+os.environ["TELEGRAM_BOT_TOKEN"] = "test-token"
+os.environ["JOB_SECRET"] = "test-job-secret"
+os.environ["TELEGRAM_WEBHOOK_SECRET"] = "test-webhook-secret"
 
 import pytest
 from pymongo import MongoClient
