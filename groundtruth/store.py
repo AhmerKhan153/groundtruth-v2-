@@ -29,7 +29,7 @@ from pymongo import MongoClient, ReturnDocument
 from pymongo.collection import Collection
 from pymongo.errors import BulkWriteError
 
-from groundtruth.config import MONGODB_DB_NAME, MONGODB_URI
+from groundtruth.config import MONGODB_DB_NAME, MONGODB_URI, SOURCE_INTERVAL_HOURS
 
 SOURCED = "sourced"      # shown in a pick list, not drafted yet
 DRAFTING = "drafting"    # a request is fetching / calling the model right now
@@ -45,8 +45,8 @@ REJECTED_TTL = timedelta(days=14)
 # killed mid-draft); a new tap may take it over. Longer than the worst-case pick.
 STALE_CLAIM_AFTER = timedelta(minutes=5)
 # The scheduler fires daily; this turns it into every other day, and a failed
-# run is naturally retried the next day.
-SOURCE_INTERVAL = timedelta(hours=44)
+# run is naturally retried the next day. Configurable: SOURCE_INTERVAL_HOURS.
+SOURCE_INTERVAL = timedelta(hours=SOURCE_INTERVAL_HOURS)
 
 DRAFTS = "drafts"
 META = "meta"
@@ -168,13 +168,18 @@ def mark_announced(draft_ids: Iterable[str]) -> None:
         _drafts().update_many({"_id": {"$in": oids}}, {"$set": {"announced": True}})
 
 
-def source_due(force: bool = False) -> bool:
-    """True if the last successful source run is older than SOURCE_INTERVAL."""
-    if force:
-        return True
+def next_source_run() -> Optional[datetime]:
+    """When the source job may next send, or None if it may send now."""
     meta = _db()[META].find_one({"_id": _SOURCE_JOB})
     last = meta.get("last_run_at") if meta else None
-    return last is None or now() - last >= SOURCE_INTERVAL
+    if last is None or now() - last >= SOURCE_INTERVAL:
+        return None
+    return last + SOURCE_INTERVAL
+
+
+def source_due(force: bool = False) -> bool:
+    """True if the last successful source run is older than SOURCE_INTERVAL."""
+    return force or next_source_run() is None
 
 
 def record_source_run() -> None:

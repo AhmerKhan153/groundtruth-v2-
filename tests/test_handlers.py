@@ -74,7 +74,8 @@ def test_source_sends_top_stories_once_per_interval(db, tg, stories):
     msg = tg.sent[0]
     assert msg["text"].startswith("Pick a story") and "Story 1" in msg["text"]
     assert [b[1] for row in msg["buttons"] for b in row][0].startswith("p:")
-    assert handlers.source_job() == {"status": "skipped"}
+    skipped = handlers.source_job()
+    assert skipped["status"] == "skipped" and skipped["next_run_after"]
 
 
 def test_forced_run_skips_stories_already_shown(db, tg, stories):

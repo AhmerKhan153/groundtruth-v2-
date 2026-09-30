@@ -334,6 +334,7 @@ Search **Container App Jobs** → **Create**.
   | `MONGODB_DB_NAME` | `groundtruth` |
   | `TELEGRAM_CHAT_ID` | **V6** |
   | `STORIES_PER_RUN` | `6` |
+  | `SOURCE_INTERVAL_HOURS` | `44` (use `0` while testing: every **Run now** sends) |
 
 **Review + create** → **Create** → **Go to resource**.
 
@@ -427,16 +428,32 @@ GitHub.
 ### Step 25. Trust GitHub's `main` branch
 *Needs: step 24.*
 
+GitHub proves who it is with a *subject* string, and Azure must hold an exact copy.
+This repo's subject includes the owner's and repo's permanent numeric IDs, so enter
+it by hand rather than letting the portal build it (the portal's GitHub scenario
+builds an older format without the IDs, and sign-in then fails with AADSTS700213).
+
 1. In `groundtruth-github` → **Certificates & secrets** → **Federated credentials**
    tab → **Add credential**.
-2. **Federated credential scenario:** **GitHub Actions deploying Azure resources**.
-3. **Organization:** `AhmerKhan153`. **Repository:** `groundtruth-v2-` (exactly as on
-   GitHub, including the trailing dash). **Entity type:** **Branch**. **GitHub branch
-   name:** `main`.
-4. **Name:** `github-main` → **Add**.
+2. **Federated credential scenario:** **Other issuer**.
+3. Fill in exactly:
 
-**Check:** the credential's subject reads
-`repo:AhmerKhan153/groundtruth-v2-:ref:refs/heads/main`.
+   | Field | Value |
+   |---|---|
+   | Issuer | `https://token.actions.githubusercontent.com` |
+   | Type | **Explicit subject identifier** (if asked) |
+   | Value (subject) | `repo:AhmerKhan153@8619432/groundtruth-v2-@1389771283:ref:refs/heads/main` |
+   | Name | `github-main` |
+   | Audience | `api://AzureADTokenExchange` |
+
+4. **Add**.
+
+*For another repo:* the numbers are the owner's and the repo's GitHub IDs. The quickest
+way to get the exact subject is to run the pipeline once: the failed login in step 30
+prints it after "presented assertion subject". Paste it here unchanged.
+
+**Check:** the credential's subject reads exactly
+`repo:AhmerKhan153@8619432/groundtruth-v2-@1389771283:ref:refs/heads/main`.
 
 ### Step 26. Allow it to update the resource group, and nothing else
 *Needs: steps 12 and 24.*
@@ -521,6 +538,7 @@ never exceed what you topped up.
 | Change a setting | App → **Containers** → **Edit and deploy** → edit the variable → **Create** |
 | Roll back | Repo → **Actions** → an older successful **ci-cd** run → **Re-run jobs** → the deploy job redeploys that image |
 | Send a pick list now | Job → **Run now** (respects the 44 h spacing) |
+| Test the flow repeatedly | Job → **Containers** → edit `SOURCE_INTERVAL_HOURS` to `0` → **Save** → **Run now** as often as you like. Set it back to `44` afterwards |
 | See what happened | App or Job → **Monitoring** → **Log stream** / Execution history |
 | Test on your laptop | `python -m scripts.dev_poll --source` (pauses the cloud webhook, restores it on Ctrl+C) |
 | Renew the GitHub token | New classic token (step 4) → App **and** Job → **Registries** (or Secrets → the `ghcr-io…` one) → update the password |
@@ -531,10 +549,10 @@ never exceed what you topped up.
 | Symptom | Likely cause → fix |
 |---|---|
 | `deploy` job **skipped** | A variable from step 29 is missing, or the run isn't on `main` |
-| `deploy` fails with **AADSTS70021** / "no matching federated identity" | Step 25's organization, repository or branch differs from GitHub's, e.g. the trailing dash or letter case |
+| `deploy` fails with **AADSTS700213** / **AADSTS70021** / "no matching federated identity" | Step 25's subject differs from what GitHub sent. Copy the subject from the error (after "presented assertion subject") into the credential, unchanged |
 | `deploy` fails with **AuthorizationFailed** | Step 26's role is missing, or was given on another resource group |
 | App stuck starting; logs mention **unauthorized / pull** | GitHub token expired or lacks `read:packages` → see "Renew the GitHub token" |
 | Buttons show a spinner, then nothing | `getWebhookInfo`: a 401 in `last_error_message` means V7 in Telegram and in the app differ → redo step 20 with the app's value |
 | "This story has expired." on every tap | You tapped a message from the other environment (laptop vs cloud database) |
-| Job **Succeeded** but no pick list | Normal on skip days (44 h spacing); its log says `"skipped"` |
+| Job **Succeeded** but no pick list | Normal inside the spacing window; the log says `"skipped"` and `next_run_after`. For testing, set `SOURCE_INTERVAL_HOURS` to `0` |
 | App errors mention **timed out** reaching Mongo | Atlas Network Access is missing `0.0.0.0/0` (step 7), or V3 has the wrong password |

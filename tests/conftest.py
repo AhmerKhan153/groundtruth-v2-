@@ -3,6 +3,9 @@ import os
 # Point the store at a throwaway database before groundtruth.config is imported.
 # load_dotenv never overrides variables that are already set.
 os.environ["MONGODB_DB_NAME"] = "groundtruth_test"
+# Tests never follow .env to a real cluster: they create and drop a database.
+# Local MongoDB by default (CI runs one as a service); override deliberately.
+os.environ["MONGODB_URI"] = os.environ.get("TEST_MONGODB_URI", "mongodb://localhost:27017/")
 # Fixed test identities, so tests never depend on (or touch) the real bot/secrets.
 os.environ["TELEGRAM_CHAT_ID"] = "1000"
 os.environ["TELEGRAM_BOT_TOKEN"] = "test-token"

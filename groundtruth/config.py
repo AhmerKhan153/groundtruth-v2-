@@ -53,3 +53,7 @@ TELEGRAM_WEBHOOK_SECRET = os.getenv("TELEGRAM_WEBHOOK_SECRET")
 # Cloud Scheduler sends this in X-Job-Secret. Unset = the endpoint refuses all calls.
 JOB_SECRET = os.getenv("JOB_SECRET")
 STORIES_PER_RUN = _int("STORIES_PER_RUN", 6)
+# Minimum gap between delivered pick lists. The scheduled job fires daily; 44h
+# makes that every other day while tolerating schedule jitter. Set 0 while
+# testing so every run sends.
+SOURCE_INTERVAL_HOURS = float(os.getenv("SOURCE_INTERVAL_HOURS") or 44)

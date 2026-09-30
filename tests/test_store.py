@@ -141,3 +141,17 @@ def test_msg_id(db):
     draft_id = _sourced_id()
     store.set_msg_id(draft_id, 42)
     assert store.get(draft_id)["msg_id"] == 42
+
+
+def test_zero_interval_always_due(db, monkeypatch):
+    """SOURCE_INTERVAL_HOURS=0 (testing) lets every run send."""
+    monkeypatch.setattr(store, "SOURCE_INTERVAL", timedelta(0))
+    store.record_source_run()
+    assert store.source_due() and store.next_source_run() is None
+
+
+def test_next_source_run(db):
+    assert store.next_source_run() is None
+    store.record_source_run()
+    remaining = store.next_source_run() - store.now()
+    assert timedelta(0) < remaining <= store.SOURCE_INTERVAL

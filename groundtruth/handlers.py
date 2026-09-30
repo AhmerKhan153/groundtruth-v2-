@@ -31,8 +31,10 @@ _RULE = "— — —"
 def source_job(force: bool = False) -> Dict[str, Any]:
     """Source fresh stories and send the pick list. Raises on failure (-> 500 -> the
     scheduler retries); the run is only recorded once the list is delivered."""
-    if not store.source_due(force):
-        return {"status": "skipped"}
+    next_run = None if force else store.next_source_run()
+    if next_run is not None:
+        # A quiet success must say why: the gap is SOURCE_INTERVAL_HOURS.
+        return {"status": "skipped", "next_run_after": next_run.isoformat(timespec="minutes")}
 
     # Stories from an earlier attempt whose pick list never went out come first;
     # new ones only fill the remaining room, so a retry doesn't grow the list.
