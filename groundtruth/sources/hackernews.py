@@ -1,4 +1,9 @@
-"""Hacker News sourcing: fetch the front page, filter, rank.
+"""Hacker News sourcing: fetch the front page and best-of list, filter, rank.
+
+Two feeds, because runs are ~48h apart. `topstories` is the live front page,
+ranked with a time penalty, so a story that peaked yesterday can fall out of its
+top 100 before the next run. `beststories` is the highest-voted recent stories
+with no such decay, which catches those. The age filter keeps both fresh.
 
 Item lookups run in a thread pool over one pooled session: 100 sequential
 requests took ~15s, and without connection reuse every lookup pays its own TLS
@@ -12,10 +17,14 @@ from typing import Dict, List
 
 import requests
 
-TOP_STORIES_URL = "https://hacker-news.firebaseio.com/v0/topstories.json"
+FEED_URLS = (
+    "https://hacker-news.firebaseio.com/v0/topstories.json",
+    "https://hacker-news.firebaseio.com/v0/beststories.json",
+)
 ITEM_URL = "https://hacker-news.firebaseio.com/v0/item/{story_id}.json"
 
-# How many top ids to inspect before ranking. Bigger = better ranking, slower.
+# How many ids to inspect per feed before ranking. Bigger = better ranking, slower.
+# The feeds overlap heavily, so two feeds cost well under 2x the lookups.
 SCAN_LIMIT = 100
 _WORKERS = 16
 _TIMEOUT = 10
@@ -36,9 +45,22 @@ def _fetch_item(story_id: int) -> Dict:
         return {}
 
 
+def _feed_ids(url: str) -> List[int]:
+    try:
+        return (_session.get(url, timeout=_TIMEOUT).json() or [])[:SCAN_LIMIT]
+    except (requests.RequestException, ValueError):
+        return []
+
+
+def merge_ids(*feeds: List[int]) -> List[int]:
+    """Union of the feeds, first occurrence wins, order kept."""
+    return list(dict.fromkeys(i for feed in feeds for i in feed))
+
+
 def rank_score(story: Dict) -> float:
-    """Blend upvotes and discussion volume so 'talked-about' stories rank well."""
-    return story.get("score", 0) + 2 * story.get("comments", 0)
+    """Upvotes plus discussion volume. Comments weigh the same as votes: at 2x,
+    flame wars outranked stories people simply found interesting."""
+    return story.get("score", 0) + story.get("comments", 0)
 
 
 def to_candidate(item: Dict, now: float) -> Dict:
@@ -60,14 +82,13 @@ def to_candidate(item: Dict, now: float) -> Dict:
 
 
 def fetch_candidates() -> List[Dict]:
-    """Return every qualifying front-page story, best first."""
-    try:
-        ids = _session.get(TOP_STORIES_URL, timeout=_TIMEOUT).json() or []
-    except (requests.RequestException, ValueError):
+    """Return every qualifying story from both feeds, best first."""
+    ids = merge_ids(*(_feed_ids(url) for url in FEED_URLS))
+    if not ids:
         return []
 
     with ThreadPoolExecutor(max_workers=_WORKERS) as pool:
-        items = list(pool.map(_fetch_item, ids[:SCAN_LIMIT]))
+        items = list(pool.map(_fetch_item, ids))
 
     now = time.time()
     candidates = [c for c in (to_candidate(item, now) for item in items) if c]

@@ -25,7 +25,13 @@ def test_filters():
     assert hn.to_candidate({}, NOW) == {}                        # failed fetch
 
 
-def test_ranking_weights_discussion():
-    quiet = {"score": 300, "comments": 10}
-    lively = {"score": 150, "comments": 100}
-    assert hn.rank_score(lively) > hn.rank_score(quiet)
+def test_ranking_counts_votes_and_discussion_equally():
+    popular = {"score": 300, "comments": 10}
+    argued = {"score": 150, "comments": 100}
+    assert hn.rank_score(popular) > hn.rank_score(argued)
+    assert hn.rank_score({"score": 100, "comments": 50}) > hn.rank_score({"score": 100, "comments": 0})
+
+
+def test_merge_ids_dedups_and_keeps_order():
+    assert hn.merge_ids([3, 1, 2], [2, 4, 3, 5]) == [3, 1, 2, 4, 5]
+    assert hn.merge_ids([], []) == []

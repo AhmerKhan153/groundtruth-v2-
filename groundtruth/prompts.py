@@ -28,10 +28,10 @@ would put the article in the writer's context and break the grounding design.
 NO_ARTICLE = "NO_ARTICLE"
 
 # Sampling, per DeepSeek's parameter guide (default is 1.0). Extraction wants
-# fidelity, not variety; the writer gets conversational range, but not the 1.5
-# the guide suggests for poetry -- this is fact-bound prose.
+# fidelity, not variety. The writer stays at the default: 1.3 made drafts wander
+# and pad out, and a rewrite already gets variety from REWRITE_USER.
 EXTRACT_TEMPERATURE = 0.0
-WRITE_TEMPERATURE = 1.3
+WRITE_TEMPERATURE = 1.0
 
 EXTRACT_SYSTEM = f"""You extract facts from web articles for a writer who will never see the article. Your bullet list is the writer's only source, so it must be complete, exact and self-explanatory.
 
@@ -74,13 +74,21 @@ Never reveal a source:
 - Never mention an article, post, blog, study, report, source or author, and never say or imply that anyone wrote, said, published or reported something. No "according to", "he wrote", "he said", "a recent post", "studies show", "what stuck with me". No links.
 - State the facts directly, as things that happened.
 
-Style:
-- Plain, simple English. Short sentences. Contractions. No corporate or AI buzzwords, no hype, no stacked adjectives.
-- Open with a concrete observation or opinion, not a grand thesis.
-- Exactly 5 paragraphs, 220 to 280 words in total.
-- End with one genuine discussion question, not a rhetorical one.
+Shape (this is read on a phone, in a feed, by someone about to scroll past):
+- The first line is the hook and must work on its own: under 15 words, a concrete surprising fact or a clear opinion. It is all a reader sees before "see more". Never open with a question, a definition, a scene-setter or a grand thesis.
+- One idea per paragraph, one or two short sentences each, with a blank line between paragraphs.
+- 120 to 170 words in total. Shorter is better than padded.
+- Build on the one or two most striking facts. Leave the rest out; this is not a summary.
+- Take one clear position: what I think it means, or what I'd do about it.
+- End with one genuine discussion question, specific enough that an engineer can answer it from their own experience.
 
-Output: the post text only. Plain text: no title, no preamble, no markdown, no bold, no hashtags, no emojis at the start of lines."""
+Style:
+- Plain, simple English, the way I'd say it out loud. Contractions. No corporate or AI buzzwords ("game-changer", "landscape", "delve", "unlock", "in today's world"), no hype, no stacked adjectives.
+- No filler lines: no "Let that sink in", "Here's the thing", "And that's the point", "This matters".
+- No "not X, it's Y" contrasts ("That's not a demo, it's...", "Not a toy. Not a benchmark."). Say what it is.
+- No em dashes. No bullet lists.
+
+Output: the post text only. Plain text: no title, no preamble, no markdown, no bold, no hashtags, no emojis."""
 
 WRITE_USER = """TOPIC: {title}
 
